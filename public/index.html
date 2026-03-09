@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Assistant</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="bg-animation"></div>
+
+<div class="layout">
+
+<div class="sidebar">
+
+<h3>Chats</h3>
+
+<button onclick="newChat()">+ New Chat</button>
+
+<div id="history"></div>
+
+</div>
+
+<div class="app">
+
+<header>
+
+<h2>🤖 AI Assistant</h2>
+
+<button id="themeToggle">🌙</button>
+
+</header>
+
+<div id="chat"></div>
+
+<div id="thinking" class="thinking">
+
+<div class="dots">
+<span></span>
+<span></span>
+<span></span>
+</div>
+
+AI is thinking...
+
+</div>
+
+<div class="inputArea">
+
+<input id="input" placeholder="Ask something..." autocomplete="off">
+
+<button onclick="sendMessage()">Send</button>
+
+<button onclick="stopVoice()" class="stopBtn">Stop</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

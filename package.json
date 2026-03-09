@@ -1,0 +1,13 @@
+{
+  "name": "mistral-voice-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@mistralai/mistralai": "^0.4.0",
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "readline-sync": "^1.4.10"
+  }
+}
