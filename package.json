@@ -3,28 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@mistralai/mistralai": "^0.4.0",
-    "axios": "^1.13.6",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "fs": "^0.0.1-security",
-    "readline-sync": "^1.4.10"
-  },
-  "description": "",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/devendard-n/Voice-chatbot.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/devendard-n/Voice-chatbot/issues"
-  },
-  "homepage": "https://github.com/devendard-n/Voice-chatbot#readme"
+    "@mistralai/mistralai": "^0.4.0"
+  }
 }
