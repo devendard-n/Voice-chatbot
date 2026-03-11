@@ -1,262 +1,260 @@
-const chat=document.getElementById("chat");
-const input=document.getElementById("input");
-const thinking=document.getElementById("thinking");
-const history=document.getElementById("history");
-const chatArea=document.getElementById("chatArea");
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const thinking = document.getElementById("thinking");
+const history = document.getElementById("history");
+const chatArea = document.getElementById("chatArea");
 
-let conversations=JSON.parse(localStorage.getItem("conversations"))||[];
-let currentChat=[];
+let conversations = JSON.parse(localStorage.getItem("conversations")) || [];
+let currentChat = [];
 
 /* voice recognition */
 
 let recognition;
 
-if("webkitSpeechRecognition" in window){
+if ("webkitSpeechRecognition" in window) {
 
-recognition=new webkitSpeechRecognition();
+    recognition = new webkitSpeechRecognition();
 
-recognition.lang="en-US";
+    recognition.lang = "en-US";
 
-recognition.onresult=(event)=>{
+    recognition.onresult = (event) => {
 
-input.value=event.results[0][0].transcript;
+        input.value = event.results[0][0].transcript;
 
-sendMessage();
+        sendMessage();
 
-};
+    };
 
 }
 
 /* start voice */
 
-function startVoice(){
+function startVoice() {
 
-if(recognition){
+    if (recognition) {
 
-recognition.start();
+        recognition.start();
 
-}
+    }
 
 }
 
 /* send message */
 
-async function sendMessage(){
+async function sendMessage() {
 
-const message=input.value.trim();
+    const message = input.value.trim();
 
-if(!message) return;
+    if (!message) return;
 
-chatArea.classList.remove("center-mode");
-chatArea.classList.add("chat-mode");
+    chatArea.classList.remove("center-mode");
+    chatArea.classList.add("chat-mode");
 
-addMessage(message,"user");
+    addMessage(message, "user");
 
-currentChat.push({role:"user",text:message});
+    currentChat.push({ role: "user", text: message });
 
-input.value="";
+    input.value = "";
 
-thinking.style.display="block";
+    thinking.style.display = "block";
 
-try{
+    try {
 
-const res=await fetch("http://localhost:3000/chat",{
+        const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message })
+        });
 
-method:"POST",
+        const data = await res.json();
 
-headers:{
-"Content-Type":"application/json"
-},
+        thinking.style.display = "none";
 
-body:JSON.stringify({message})
+        let reply = data.reply;
 
-});
+        reply = cleanText(reply);
 
-const data=await res.json();
+        addMessage(reply, "bot");
 
-thinking.style.display="none";
+        currentChat.push({ role: "bot", text: reply });
 
-const reply=data.reply;
+        saveConversation();
 
-addMessage(reply,"bot");
+        speak(reply);
 
-currentChat.push({role:"bot",text:reply});
+    } catch (err) {
 
-saveConversation();
+        thinking.style.display = "none";
 
-speak(reply);
+        addMessage("Server error", "bot");
 
-}catch(err){
-
-thinking.style.display="none";
-
-addMessage("Server error","bot");
-
-}
+    }
 
 }
 
 /* add message */
 
-function addMessage(text,type){
+function addMessage(text, type) {
 
-const div=document.createElement("div");
+    const div = document.createElement("div");
 
-div.classList.add("message",type);
+    div.classList.add("message", type);
 
-div.innerText=text;
+    div.innerText = text;
 
-chat.appendChild(div);
+    chat.appendChild(div);
 
-chat.scrollTop=chat.scrollHeight;
+    chat.scrollTop = chat.scrollHeight;
 
 }
 
 /* voice reply */
 
-function speak(text){
+function speak(text) {
 
-const speech=new SpeechSynthesisUtterance(text);
+    const speech = new SpeechSynthesisUtterance(text);
 
-speech.lang="en-US";
+    speech.lang = "en-US";
 
-window.speechSynthesis.speak(speech);
+    window.speechSynthesis.speak(speech);
 
 }
 
 /* stop voice */
 
-function stopVoice(){
+function stopVoice() {
 
-window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel();
 
 }
 
 /* save chat */
 
-function saveConversation(){
+function saveConversation() {
 
-conversations.push([...currentChat]);
+    conversations.push([...currentChat]);
 
-localStorage.setItem("conversations",JSON.stringify(conversations));
+    localStorage.setItem("conversations", JSON.stringify(conversations));
 
-updateSidebar();
+    updateSidebar();
 
 }
 
 /* sidebar */
 
-function updateSidebar(){
+function updateSidebar() {
 
-history.innerHTML="";
+    history.innerHTML = "";
 
-conversations.forEach((chat,index)=>{
+    conversations.forEach((chat, index) => {
 
-const item=document.createElement("div");
+        const item = document.createElement("div");
 
-item.className="history-item";
+        item.className = "history-item";
 
-let title="Chat";
+        let title = "Chat";
 
-for(let msg of chat){
+        for (let msg of chat) {
 
-if(msg.role==="user"){
-title=msg.text.slice(0,25);
-break;
-}
+            if (msg.role === "user") {
+                title = msg.text.slice(0, 25);
+                break;
+            }
 
-}
+        }
 
-const span=document.createElement("span");
+        const span = document.createElement("span");
 
-span.innerText=title;
+        span.innerText = title;
 
-span.onclick=()=>loadConversation(index);
+        span.onclick = () => loadConversation(index);
 
-const del=document.createElement("button");
+        const del = document.createElement("button");
 
-del.innerText="🗑";
+        del.innerText = "🗑";
 
-del.className="delete-btn";
+        del.className = "delete-btn";
 
-del.onclick=(e)=>{
+        del.onclick = (e) => {
 
-e.stopPropagation();
+            e.stopPropagation();
 
-deleteConversation(index);
+            deleteConversation(index);
 
-};
+        };
 
-item.appendChild(span);
-item.appendChild(del);
+        item.appendChild(span);
+        item.appendChild(del);
 
-history.appendChild(item);
+        history.appendChild(item);
 
-});
-
-}
-
-function loadConversation(index){
-
-chat.innerHTML="";
-
-const selected=conversations[index];
-
-selected.forEach(msg=>{
-
-addMessage(msg.text,msg.role);
-
-});
+    });
 
 }
 
-function deleteConversation(index){
+function loadConversation(index) {
 
-conversations.splice(index,1);
+    chat.innerHTML = "";
 
-localStorage.setItem("conversations",JSON.stringify(conversations));
+    const selected = conversations[index];
 
-updateSidebar();
+    selected.forEach(msg => {
+
+        addMessage(msg.text, msg.role);
+
+    });
+
+}
+
+function deleteConversation(index) {
+
+    conversations.splice(index, 1);
+
+    localStorage.setItem("conversations", JSON.stringify(conversations));
+
+    updateSidebar();
 
 }
 
 /* new chat */
 
-function newChat(){
+function newChat() {
 
-chat.innerHTML="";
+    chat.innerHTML = "";
 
-currentChat=[];
+    currentChat = [];
 
-chatArea.classList.remove("chat-mode");
+    chatArea.classList.remove("chat-mode");
 
-chatArea.classList.add("center-mode");
+    chatArea.classList.add("center-mode");
 
 }
-function cleanText(text){
+function cleanText(text) {
 
-return text
+    return text
 
-/* remove markdown bold/italic */
-.replace(/\*\*/g,"")
-.replace(/\*/g,"")
+        /* remove markdown bold/italic */
+        .replace(/\*\*/g, "")
+        .replace(/\*/g, "")
 
-/* remove headings */
-.replace(/###/g,"")
-.replace(/##/g,"")
-.replace(/#/g,"")
+        /* remove headings */
+        .replace(/###/g, "")
+        .replace(/##/g, "")
+        .replace(/#/g, "")
 
-/* remove bullet points */
-.replace(/^- /gm,"")
+        /* remove bullet points */
+        .replace(/^- /gm, "")
 
-/* remove numbered list formatting */
-.replace(/^\d+\.\s/gm,"")
+        /* remove numbered list formatting */
+        .replace(/^\d+\.\s/gm, "")
 
-/* remove extra new lines */
-.replace(/\n{2,}/g,"\n")
+        /* remove extra new lines */
+        .replace(/\n{2,}/g, "\n")
 
-/* trim spaces */
-.trim();
+        /* trim spaces */
+        .trim();
 
 }
 
