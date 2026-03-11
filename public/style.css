@@ -188,9 +188,7 @@ flex-direction:column;
 }
 
 .sidebar{
-width:100%;
-height:140px;
-overflow-y:auto;
+    display: none;
 }
 
 #chat{
