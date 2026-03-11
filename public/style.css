@@ -179,23 +179,49 @@ display:none;
 padding:10px;
 }
 
-/* mobile responsive */
+/* MOBILE */
 
 @media (max-width:700px){
+
+/* hide sidebar */
+
+.sidebar{
+display:none;
+}
+
+/* layout full width */
 
 .layout{
 flex-direction:column;
 }
 
-.sidebar{
-    display: none;
+.app{
+width:100%;
 }
+
+/* chat scroll */
 
 #chat{
 padding:10px;
+padding-bottom:80px;
 }
 
+/* composer fixed */
+
 .composer{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+width:100%;
+max-width:100%;
+padding:10px;
+background:#f4f4f4;
+border-top:1px solid #ddd;
+z-index:100;
+}
+
+.composer input{
 padding:10px;
 }
 
