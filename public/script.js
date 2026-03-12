@@ -1,260 +1,185 @@
-const chat = document.getElementById("chat");
-const input = document.getElementById("input");
 const thinking = document.getElementById("thinking");
+const aiContainer = document.getElementById("aiContainer");
 const history = document.getElementById("history");
-const chatArea = document.getElementById("chatArea");
-
-let conversations = JSON.parse(localStorage.getItem("conversations")) || [];
-let currentChat = [];
-
-/* voice recognition */
 
 let recognition;
 
-if ("webkitSpeechRecognition" in window) {
+let conversations = JSON.parse(localStorage.getItem("conversations")) || [];
 
-    recognition = new webkitSpeechRecognition();
+/* START VOICE */
 
-    recognition.lang = "en-US";
+function startVoice(){
 
-    recognition.onresult = (event) => {
+if (!("webkitSpeechRecognition" in window)) {
 
-        input.value = event.results[0][0].transcript;
+thinking.innerText="Speech recognition not supported";
 
-        sendMessage();
-
-    };
+return;
 
 }
 
-/* start voice */
+recognition = new webkitSpeechRecognition();
 
-function startVoice() {
+recognition.lang = "en-US";
 
-    if (recognition) {
+thinking.innerText="Listening...";
 
-        recognition.start();
+recognition.start();
 
-    }
+recognition.onresult = async function(event){
 
-}
+let message = event.results[0][0].transcript;
 
-/* send message */
+thinking.innerText="AI is thinking...";
 
-async function sendMessage() {
+try{
 
-    const message = input.value.trim();
+const res = await fetch("/api/chat",{
 
-    if (!message) return;
+method:"POST",
 
-    chatArea.classList.remove("center-mode");
-    chatArea.classList.add("chat-mode");
+headers:{
+"Content-Type":"application/json"
+},
 
-    addMessage(message, "user");
+body:JSON.stringify({message})
 
-    currentChat.push({ role: "user", text: message });
+});
 
-    input.value = "";
+const data = await res.json();
 
-    thinking.style.display = "block";
+speak(data.reply);
 
-    try {
+saveConversation(message, data.reply);
 
-        const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ message })
-        });
+}catch(err){
 
-        const data = await res.json();
-
-        thinking.style.display = "none";
-
-        let reply = data.reply;
-
-        reply = cleanText(reply);
-
-        addMessage(reply, "bot");
-
-        currentChat.push({ role: "bot", text: reply });
-
-        saveConversation();
-
-        speak(reply);
-
-    } catch (err) {
-
-        thinking.style.display = "none";
-
-        addMessage("Server error", "bot");
-
-    }
+thinking.innerText="Server error";
 
 }
 
-/* add message */
-
-function addMessage(text, type) {
-
-    const div = document.createElement("div");
-
-    div.classList.add("message", type);
-
-    div.innerText = text;
-
-    chat.appendChild(div);
-
-    chat.scrollTop = chat.scrollHeight;
+};
 
 }
 
-/* voice reply */
+/* AI SPEAK */
 
-function speak(text) {
+function speak(text){
 
-    const speech = new SpeechSynthesisUtterance(text);
+const speech = new SpeechSynthesisUtterance(text);
 
-    speech.lang = "en-US";
+speech.lang="en-US";
 
-    window.speechSynthesis.speak(speech);
+/* start animation */
 
-}
+aiContainer.classList.add("ai-speaking");
 
-/* stop voice */
+speech.onend = () =>{
 
-function stopVoice() {
+aiContainer.classList.remove("ai-speaking");
 
-    window.speechSynthesis.cancel();
+thinking.innerText="Tap AI to speak";
 
-}
+};
 
-/* save chat */
-
-function saveConversation() {
-
-    conversations.push([...currentChat]);
-
-    localStorage.setItem("conversations", JSON.stringify(conversations));
-
-    updateSidebar();
+window.speechSynthesis.speak(speech);
 
 }
 
-/* sidebar */
+/* STOP BUTTON */
 
-function updateSidebar() {
+function stopVoice(){
 
-    history.innerHTML = "";
+window.speechSynthesis.cancel();
 
-    conversations.forEach((chat, index) => {
+if(recognition){
+recognition.stop();
+}
 
-        const item = document.createElement("div");
+aiContainer.classList.remove("ai-speaking");
 
-        item.className = "history-item";
-
-        let title = "Chat";
-
-        for (let msg of chat) {
-
-            if (msg.role === "user") {
-                title = msg.text.slice(0, 25);
-                break;
-            }
-
-        }
-
-        const span = document.createElement("span");
-
-        span.innerText = title;
-
-        span.onclick = () => loadConversation(index);
-
-        const del = document.createElement("button");
-
-        del.innerText = "🗑";
-
-        del.className = "delete-btn";
-
-        del.onclick = (e) => {
-
-            e.stopPropagation();
-
-            deleteConversation(index);
-
-        };
-
-        item.appendChild(span);
-        item.appendChild(del);
-
-        history.appendChild(item);
-
-    });
+thinking.innerText="Stopped";
 
 }
 
-function loadConversation(index) {
+/* SAVE HISTORY */
 
-    chat.innerHTML = "";
+function saveConversation(user,bot){
 
-    const selected = conversations[index];
+conversations.push([
+{role:"user",text:user},
+{role:"bot",text:bot}
+]);
 
-    selected.forEach(msg => {
+localStorage.setItem("conversations",JSON.stringify(conversations));
 
-        addMessage(msg.text, msg.role);
-
-    });
-
-}
-
-function deleteConversation(index) {
-
-    conversations.splice(index, 1);
-
-    localStorage.setItem("conversations", JSON.stringify(conversations));
-
-    updateSidebar();
+updateSidebar();
 
 }
 
-/* new chat */
+/* SIDEBAR */
 
-function newChat() {
+function updateSidebar(){
 
-    chat.innerHTML = "";
+history.innerHTML="";
 
-    currentChat = [];
+conversations.forEach((chat,index)=>{
 
-    chatArea.classList.remove("chat-mode");
+const item=document.createElement("div");
 
-    chatArea.classList.add("center-mode");
+item.className="history-item";
+
+let title="Chat";
+
+for(let msg of chat){
+
+if(msg.role==="user"){
+title=msg.text.slice(0,25);
+break;
+}
 
 }
-function cleanText(text) {
 
-    return text
+const span=document.createElement("span");
 
-        /* remove markdown bold/italic */
-        .replace(/\*\*/g, "")
-        .replace(/\*/g, "")
+span.innerText=title;
 
-        /* remove headings */
-        .replace(/###/g, "")
-        .replace(/##/g, "")
-        .replace(/#/g, "")
+const del=document.createElement("button");
 
-        /* remove bullet points */
-        .replace(/^- /gm, "")
+del.innerText="🗑";
 
-        /* remove numbered list formatting */
-        .replace(/^\d+\.\s/gm, "")
+del.className="delete-btn";
 
-        /* remove extra new lines */
-        .replace(/\n{2,}/g, "\n")
+del.onclick=(e)=>{
 
-        /* trim spaces */
-        .trim();
+e.stopPropagation();
+
+deleteConversation(index);
+
+};
+
+item.appendChild(span);
+item.appendChild(del);
+
+history.appendChild(item);
+
+});
+
+}
+
+function deleteConversation(index){
+
+conversations.splice(index,1);
+
+localStorage.setItem("conversations",JSON.stringify(conversations));
+
+updateSidebar();
+
+}
+
+function newChat(){
+
+thinking.innerText="Tap AI to speak";
 
 }
 
